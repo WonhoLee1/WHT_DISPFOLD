@@ -8,9 +8,14 @@ Layer stack (bottom to top, A-B-A-B-A):
 Both layers use the same Neo-Hookean form:
   C10 = E / (4 * (1 + nu))
   D1  = 6 * (1 - 2*nu) / E
+
+Geometry (X=0 symmetric):
+  Total width: 120mm (-60 .. +60)
+  Hinges:      X = -15mm, +15mm (reference points at Y=0)
+  RBE region:  X < -35mm (left), X > +35mm (right) — bottom surface nodes
 """
 
-from typing import Tuple
+from typing import Tuple, List
 
 
 def nh_c10(E: float, nu: float) -> float:
@@ -23,7 +28,7 @@ def nh_d1(E: float, nu: float) -> float:
     return 6.0 * (1.0 - 2.0 * nu) / E
 
 
-def layer_stack(n_layers: int) -> list[Tuple[str, str]]:
+def layer_stack(n_layers: int) -> List[Tuple[str, str]]:
     """
     Return list of (name, type) pairs in stacking order (bottom to top).
 
@@ -40,44 +45,53 @@ def layer_mid(layer_idx: int, mid_a: int = 1, mid_b: int = 2) -> int:
 
 
 DEFAULT_PARAMS = {
-    # Geometry [mm]
-    'hinge_L':       35.0,      # left hinge X-coordinate
-    'hinge_R':       65.0,      # right hinge X-coordinate
-    'depth':          1.0,      # Z-depth for 3D [mm]
+    # Geometry [mm] (X=0 symmetric)
+    # Coordinate axes: X=width(-80..+80), Y=depth(0..1mm, sym at Y=0), Z=thickness(0..0.15mm)
+    'total_width':    160.0,     # full display width [mm] (-80 to +80)
+    'hinge_L':       -10.0,      # left hinge X position [mm] (cylinder axis at Z=0)
+    'hinge_R':        10.0,      # right hinge X position [mm]
+    'rbe_region':     10.0,      # |X| > 10mm bottom-surface nodes get rotation BCs
+    'depth':           1.0,      # Y-depth [mm] (symmetry at Y=0)
 
-    # Layer stack
-    'layer_thick':    0.030,    # each layer thickness [mm] (30 um)
-    'n_layers':       5,        # A-B-A-B-A
+    # Layer stack (Z direction: Z=0 bottom/hinge surface, Z=0.15mm top/orange)
+    'layer_thick':     0.030,    # each layer thickness [mm] (30 um)
+    'n_layers':        5,        # A-B-A-B-A
+    'ny_per_layer':    3,        # elements per layer through-thickness
 
-    # Mesh X-division (hinge region only)
-    'nx_hinge':      600,       # elements in hinge region
+    # Mesh division
+    'nx_total':      1600,       # total X-direction elements (160mm @ 10/mm)
 
-    # Bandwidth: prescribe displacement for a band of nodes near each hinge edge
-    'hinge_band_elements': 5,
+    # Hinge cylinder geometry (hollow, axis along Y, center at X=hinge, Z=0)
+    'hinge_cylinder_od':     10.0,   # outer diameter [mm]
+    'hinge_cylinder_id':      4.0,   # inner diameter [mm]
+    'hinge_cylinder_ntheta':  16,    # circumferential elements
+    'hinge_cylinder_depth':    1.0,  # Y-depth [mm] (same as display depth)
 
     # Material A: stiff structural layer (Neo-Hookean)
-    'A_E':           2000.0,    # Young's modulus [MPa]
-    'A_nu':           0.34,
+    'A_E':           2000.0,     # Young's modulus [MPa]
+    'A_nu':            0.34,
 
     # Material B: soft PSA layer (Neo-Hookean)
-    'B_E':            50.0,     # Young's modulus [MPa]
-    'B_nu':            0.45,
+    'B_E':             50.0,     # Young's modulus [MPa]
+    'B_nu':             0.45,
 
     # Folding
-    'fold_angle':     90.0,     # [deg] per wing
-    'fold_time':       1.0,     # [s] folding duration
-    'nsteps':        200,       # solver increments
+    'fold_angle':      90.0,     # [deg] per wing
+    'fold_time':        1.0,     # [s] folding duration
+    'nsteps':         200,       # solver increments
 }
 
-# FEBio-specific viscoelastic parameters (for febio solver only)
+# Master node IDs for RBE (reserved high IDs to avoid mesh collision)
+RBE_MASTER_IDS = {
+    'L': 999997,      # left hinge master node ID
+    'R': 999998,      # right hinge master node ID
+}
+
+# FEBio-specific viscoelastic parameters
 FEBIO_VISCO_PARAMS = {
     'B_g1':  0.5,     # Prony g1
     'B_t1':  0.1,     # Prony tau1 [s]
     'B_g2':  0.3,     # Prony g2
     'B_t2':  2.0,     # Prony tau2 [s]
-    'nx_left':   28,  # left wing elements (0~35mm)
-    'nx_hinge':  60,  # hinge elements (35~65mm)
-    'nx_right':  28,  # right wing elements (65~100mm)
-    'ny_per_layer': 2,
-    'nz':           1,
+    'nz':     1,      # Z-division
 }

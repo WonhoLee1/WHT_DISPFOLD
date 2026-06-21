@@ -29,3 +29,11 @@ Thumbs.db
 .idea/
 .vscode/
 *.swp
+
+# OMC / Claude
+.omc/
+
+# Scratch test files
+_test_*.py
+test_kin*
+spooles.out
