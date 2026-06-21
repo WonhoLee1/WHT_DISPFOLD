@@ -1,0 +1,31 @@
+# Generated solver input files
+display_folding*.fem
+display_folding*.inp
+display_folding*.feb
+display_folding*.dat
+display_folding*.sta
+display_folding*.cvg
+display_folding*.frd
+display_folding*.pvd
+display_folding*.vtu
+display_folding*.12d
+display_folding*.log
+display_folding_log.txt
+
+# Results
+results/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
