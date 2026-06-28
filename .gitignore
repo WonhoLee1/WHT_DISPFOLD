@@ -11,6 +11,7 @@ display_folding*.vtu
 display_folding*.12d
 display_folding*.log
 display_folding_log.txt
+display_folding*.hdf
 
 # Results
 results/
