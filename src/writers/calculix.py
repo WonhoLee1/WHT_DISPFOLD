@@ -161,6 +161,18 @@ def write(p: dict, nodes: np.ndarray, elems: list, node_sets: dict,
             L(f"{nid}, 2, 2, 0.0")
     L("")
 
+    # Center-line constraint: X=0, Z=0 nodes → UX=0 (symmetry in X)
+    # Prevents rigid-body drift of the free hinge zone during large fold.
+    L("*BOUNDARY")
+    for i in range(len(nodes)):
+        nid = i + 1
+        if nid in cyl_node_ids:
+            continue
+        x, y, z = nodes[i, 0], nodes[i, 1], nodes[i, 2]
+        if abs(x) < eps and abs(z) < eps:
+            L(f"{nid}, 1, 1, 0.0")
+    L("")
+
     # Cylinder REF nodes: fix all translations (UX=UY=UZ=0), DOF 1-3
     L("*BOUNDARY")
     for master_id in [RBE_MASTER_IDS['L'], RBE_MASTER_IDS['R']]:
@@ -174,9 +186,11 @@ def write(p: dict, nodes: np.ndarray, elems: list, node_sets: dict,
 
     # --- Step ---
     dt = p['fold_time'] / p['nsteps']
-    L("*STEP, NLGEOM, INC=1000")
+    L("*STEP, NLGEOM, INC=2000")
     L("*STATIC")
-    L(f"{dt:.6e}, {p['fold_time']:.6e}, 1.000000e-08, {dt:.6e}")
+    L(f"{dt:.6e}, {p['fold_time']:.6e}, 1.000000e-06, {dt:.6e}")
+    L("*CONTROLS, PARAMETERS=TIME INCREMENTATION")
+    L("4, 8, 9, 16, 10, 4, 12, 20, 6, 3, 3")
     L("")
 
     # --- Prescribed UX on Z=0 panel nodes (DOF 1) ---
