@@ -189,7 +189,7 @@ def write(p: dict, nodes: np.ndarray, elems: list, node_sets: dict,
 
     # --- Step ---
     dt = p['fold_time'] / p['nsteps']
-    L("*STEP, NLGEOM, INC=2000")
+    L("*STEP, NLGEOM, INC=2000, SOLVER=SPOOLES")
     L("*STATIC")
     L(f"{dt:.6e}, {p['fold_time']:.6e}, 1.000000e-06, {dt:.6e}")
     L("*CONTROLS, PARAMETERS=TIME INCREMENTATION")
