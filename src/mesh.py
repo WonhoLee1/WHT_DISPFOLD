@@ -337,7 +337,9 @@ def build_hinge_cylinders(nodes_3d: np.ndarray,
         #   idx ntheta..2*ntheta-1   : outer ring, Z=0
         #   idx 2*ntheta..3*ntheta-1 : inner ring, Z=depth
         #   idx 3*ntheta..4*ntheta-1 : outer ring, Z=depth
-        # Cylinder axis along Y; rings lie in XZ plane centered at (hinge_x, Z=0)
+        # Cylinder axis along Y; rings in XZ plane, center at (hinge_x, Z=-ro)
+        # → cylinder top (Z=0) is tangent to display bottom surface.
+        cyl_z_center = -ro
         cyl_nids = []
         for iy in range(2):
             y = 0.0 if iy == 0 else depth
@@ -345,7 +347,7 @@ def build_hinge_cylinders(nodes_3d: np.ndarray,
                 for i_th in range(ntheta):
                     th = 2.0 * math.pi * i_th / ntheta
                     x = hinge_x + radius * math.cos(th)
-                    z = radius * math.sin(th)   # ring in XZ plane
+                    z = cyl_z_center + radius * math.sin(th)
                     nodes_3d = np.vstack([nodes_3d, [x, y, z]])
                     cyl_nids.append(next_nid)
                     next_nid += 1

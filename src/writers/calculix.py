@@ -20,13 +20,15 @@ import numpy as np
 from ..materials import nh_c10, nh_d1, RBE_MASTER_IDS
 
 
-def _rotation_displacement(x: float, z: float, x_h: float, theta: float) -> tuple:
-    """Rotation in XZ plane about Y-axis pivot at (x_h, Z=0). Returns (UX, UZ)."""
+def _rotation_displacement(x: float, z: float, x_h: float, z_h: float,
+                           theta: float) -> tuple:
+    """Rotation in XZ plane about Y-axis pivot at (x_h, z_h). Returns (UX, UZ)."""
     c = math.cos(theta)
     s = math.sin(theta)
     rx = x - x_h
-    ux = rx * (c - 1.0) - z * s
-    uz = rx * s + z * (c - 1.0)
+    rz = z - z_h        # distance from pivot Z (cylinder center)
+    ux = rx * (c - 1.0) - rz * s
+    uz = rx * s + rz * (c - 1.0)
     return ux, uz
 
 
@@ -36,6 +38,7 @@ def write(p: dict, nodes: np.ndarray, elems: list, node_sets: dict,
     x_hinge_L = p['hinge_L']
     x_hinge_R = p['hinge_R']
     rbe = p['rbe_region']
+    z_pivot = -p['hinge_cylinder_od'] / 2.0   # cylinder center Z = -ro (below display)
 
     angle_deg = p['fold_angle']
     # Left: -90 deg (CW from +Y), Right: +90 deg (CCW from +Y) → U-shape arms up
@@ -205,11 +208,11 @@ def write(p: dict, nodes: np.ndarray, elems: list, node_sets: dict,
         if abs(z) > eps:
             continue
         if x < -rbe + eps:
-            ux, _ = _rotation_displacement(x, z, x_hinge_L, theta_L)
+            ux, _ = _rotation_displacement(x, z, x_hinge_L, z_pivot, theta_L)
             L(f"{nid}, 1, 1, {ux:.8e}")
             nL += 1
         elif x > rbe - eps:
-            ux, _ = _rotation_displacement(x, z, x_hinge_R, theta_R)
+            ux, _ = _rotation_displacement(x, z, x_hinge_R, z_pivot, theta_R)
             L(f"{nid}, 1, 1, {ux:.8e}")
             nR += 1
     L("")
@@ -224,10 +227,10 @@ def write(p: dict, nodes: np.ndarray, elems: list, node_sets: dict,
         if abs(z) > eps:
             continue
         if x < -rbe + eps:
-            _, uz = _rotation_displacement(x, z, x_hinge_L, theta_L)
+            _, uz = _rotation_displacement(x, z, x_hinge_L, z_pivot, theta_L)
             L(f"{nid}, 3, 3, {uz:.8e}")
         elif x > rbe - eps:
-            _, uz = _rotation_displacement(x, z, x_hinge_R, theta_R)
+            _, uz = _rotation_displacement(x, z, x_hinge_R, z_pivot, theta_R)
             L(f"{nid}, 3, 3, {uz:.8e}")
     L("")
 

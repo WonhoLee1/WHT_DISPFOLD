@@ -50,7 +50,7 @@ DEFAULT_PARAMS = {
     'total_width':    160.0,     # full display width [mm] (-80 to +80)
     'hinge_L':       -10.0,      # left hinge X position [mm] (cylinder axis at Z=0)
     'hinge_R':        10.0,      # right hinge X position [mm]
-    'rbe_region':     10.0,      # |X| > 10mm bottom-surface nodes get rotation BCs
+    'rbe_region':     25.0,      # |X| > 25mm bottom-surface nodes get rotation BCs
     'depth':           1.0,      # Y-depth [mm] (symmetry at Y=0)
 
     # Layer stack (Z direction: Z=0 bottom/hinge surface, Z=0.15mm top/orange)
