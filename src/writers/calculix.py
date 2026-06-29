@@ -79,9 +79,6 @@ def write(p: dict, nodes: np.ndarray, elems: list, node_sets: dict,
     L("*NODE, NSET=ALL")
     for i in range(len(nodes)):
         L(f"{i+1}, {nodes[i,0]:.8e}, {nodes[i,1]:.8e}, {nodes[i,2]:.8e}")
-    for mid, hx in [(RBE_MASTER_IDS['L'], p['hinge_L']),
-                    (RBE_MASTER_IDS['R'], p['hinge_R'])]:
-        L(f"{mid}, {hx:.8e}, 0.00000000e+00, 0.00000000e+00")
     L("")
 
     # --- Display element sets per layer ---
@@ -128,21 +125,11 @@ def write(p: dict, nodes: np.ndarray, elems: list, node_sets: dict,
     L(f"{b_c10:.6e}, {b_d1:.6e}")
     L("")
 
-    # Cylinder material (steel-like linear elastic; *RIGID BODY overrides)
+    # Cylinder material — stiff elastic for visualization only (no *RIGID BODY)
+    # Using display A-layer stiffness to avoid extreme stiffness ratios in matrix.
     L("*MATERIAL, NAME=MAT_CYL")
     L("*ELASTIC")
-    L("2.100000e+05, 3.000000e-01")
-    L("")
-
-    # --- Hinge cylinder rigid bodies ---
-    for side_key, elset_name, master_id in [
-            ('L', 'CYL_L', RBE_MASTER_IDS['L']),
-            ('R', 'CYL_R', RBE_MASTER_IDS['R'])]:
-        cyl_elems = [eid for eid, (layer_idx, _)
-                     in enumerate(elems, 1) if layer_idx == (-1 if side_key == 'L' else -2)]
-        if not cyl_elems:
-            continue
-        L(f"*RIGID BODY, REF NODE={master_id}, ELSET={elset_name}")
+    L(f"{p['A_E']:.6e}, {p['A_nu']:.6f}")
     L("")
 
     # --- Fixed boundary conditions (pre-step) ---
@@ -176,16 +163,9 @@ def write(p: dict, nodes: np.ndarray, elems: list, node_sets: dict,
             L(f"{nid}, 1, 1, 0.0")
     L("")
 
-    # Cylinder REF nodes: fix all translations (UX=UY=UZ=0), DOF 1-3
-    L("*BOUNDARY")
-    for master_id in [RBE_MASTER_IDS['L'], RBE_MASTER_IDS['R']]:
-        L(f"{master_id}, 1, 3, 0.0")
-    L("")
-
     # --- Amplitude definitions ---
-    _format_amplitude("AMP_UX",  ux_amp_vals,  lines)
-    _format_amplitude("AMP_UZ",  uz_amp_vals,  lines)
-    _format_amplitude("AMP_ROT", rot_amp_vals, lines)
+    _format_amplitude("AMP_UX", ux_amp_vals, lines)
+    _format_amplitude("AMP_UZ", uz_amp_vals, lines)
 
     # --- Step ---
     dt = p['fold_time'] / p['nsteps']
@@ -232,12 +212,6 @@ def write(p: dict, nodes: np.ndarray, elems: list, node_sets: dict,
         elif x > rbe - eps:
             _, uz = _rotation_displacement(x, z, x_hinge_R, z_pivot, theta_R)
             L(f"{nid}, 3, 3, {uz:.8e}")
-    L("")
-
-    # --- Cylinder rigid body Y-rotation (DOF 5), same angle as panel BCs ---
-    L("*BOUNDARY, AMPLITUDE=AMP_ROT")
-    L(f"{RBE_MASTER_IDS['L']}, 5, 5, {theta_L:.8e}")
-    L(f"{RBE_MASTER_IDS['R']}, 5, 5, {theta_R:.8e}")
     L("")
 
     L("*NODE FILE")
